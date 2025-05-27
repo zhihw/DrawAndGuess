@@ -32,7 +32,7 @@ function setupSocket(io){
         waiting.push(socket.id);
         io.emit('allPlayers', clients);
         io.emit('lobbyPlayers', waiting);
-        io.emit('yourData',client);
+        socket.emit('yourData',client);
         //players who want to stay in lobby | not ready yet
         
         db.query(
@@ -62,7 +62,7 @@ function setupSocket(io){
              `,
             [client.nickname,client.userID,oldID]
             );
-            io.emit('yourData',client);
+            socket.emit('yourData',client);
             io.emit('lobbyPlayers', waiting);
             io.emit('allPlayers', clients);
         });
