@@ -69,6 +69,10 @@ function setupSocket(io){
         //closure the client when user connected,  and because it is reference so clients will be edited 
 
         socket.on("start",()=>{
+            if (ready.some(p => p.socketID === socket.id)) {
+                socket.emit('readyPlayers', ready);
+                return;
+            }
             waiting = waiting.filter(c => c !== socket.id);
             const c = {
                 nickname: client.nickname,
@@ -76,6 +80,7 @@ function setupSocket(io){
                 agree: false
             }
             ready.push(c);
+            socket.emit('readyPlayers', ready);
             socket.join('readyRoom');
             io.emit('lobbyPlayers', waiting);
             io.emit('readyPlayers', ready);
