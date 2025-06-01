@@ -1,4 +1,4 @@
-const { placeHolder } = require("./game");
+const {  startRound, endRound, checkAnswer  } = require("./game");
 const db = require("./db");
 ////custom id generater num only with custom length
 function idGenerate(l) {
@@ -74,6 +74,7 @@ function setupSocket(io) {
         nickname: client.nickname,
         socketID: socket.id,
         agree: false,
+        role: "Guess",
       };
       ready.push(c);
       socket.join("readyRoom");
@@ -113,9 +114,11 @@ function setupSocket(io) {
       socket.leave("readyRoom");
       io.emit("lobbyPlayers", waiting);
       io.emit("readyPlayers", ready);
+      //if left player allready ready
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         inGame = true;
         io.emit("startGame", { timestamp: Date.now(), gameState: inGame });
+        startRound(io, ready);
       }
     });
 
@@ -127,13 +130,34 @@ function setupSocket(io) {
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         inGame = true;
         io.emit("startGame", { timestamp: Date.now(), gameState: inGame });
+        startRound(io, ready);
       } else {
         io.in("readyRoom").emit("readyPlayers", ready);
       }
     });
-    // gamescreen events
-    socket.on("getPoints", (points) => {
-      client.score += points;
+
+    //game screen events
+
+    socket.on("submitGuess", ({ guessWord }) => {
+        const playerIdx = ready.findIndex(p => p.socketID === socket.id);
+        if (playerIdx === -1) return;
+        if (checkAnswer(guessWord)) {
+          endRound(io, ready, playerIdx);
+        }
+        else socket.emit("wrongAnswer");
+    });
+
+    socket.on("chat", ({ message }) => {
+      player=ready.find((c) => c.socketID === socket.id);
+      io.in("readyRoom").emit("chat", { message, nickname:player.nickname });
+    });
+
+    socket.on("draw", data => {
+      socket.to("readyRoom").emit("draw", data);
+    });
+
+    socket.on("clearCanvas", () => {
+      socket.to("readyRoom").emit("clearCanvas");
     });
 
     //scorescreen events
@@ -167,7 +191,6 @@ function setupSocket(io) {
       );
       //avoid db include invalid data
     });
-    //todo chat event, canvas event,disconnect...
   });
 }
 
