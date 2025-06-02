@@ -23,6 +23,10 @@ export default function HomeScreen(){
         socket.on('startGame', ({gameState})=>{
           setGameState(gameState);
         });
+        socket.on('finishGame', ({gameState})=>{
+          setGameState(gameState);
+        });
+        socket.emit('requestInit');
 
         //register listener when component mount 
         return()=>{
@@ -32,9 +36,10 @@ export default function HomeScreen(){
             socket.off('allPlayersData');
             socket.off('yourDbData');
             socket.off('startGame');
+            socket.off('finishGame');
         };
         //clean listener when component unmount
-    },[]);
+    },[navigate]);
 
 
     const handleNickname=()=>{

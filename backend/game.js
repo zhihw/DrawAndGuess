@@ -33,7 +33,7 @@ function checkAnswer(answer) {
   return false;
 }
 
-function startRound(io, ready) {
+function startRound(io, ready, waiting) {
   roundNo += 1;
   resetPlayers(ready);
   currentArtistIx = artistPicker(ready);
@@ -41,14 +41,14 @@ function startRound(io, ready) {
   const roundEndTs = Date.now() + 120_000;
 
   io.in("readyRoom").emit("gameStarted", {
-    roundNo, artistIx: currentArtistIx, word: currentWord, roundEndTs
+    roundNo, artistIx: currentArtistIx, word: currentWord, roundEndTs, players: ready
   });
 
   if(roundTimerId) clearTimeout(roundTimerId);
-  roundTimerId=setTimeout(() => endRound(io, ready, -1), 120_000);
+  roundTimerId=setTimeout(() => endRound(io, ready, waiting, -1), 120_000);
 }
 
-function endRound(io, ready, winnerIx) {
+async function endRound(io, ready, waiting, winnerIx) {
   if (roundTimerId) {
     clearTimeout(roundTimerId);
     roundTimerId=null;
@@ -62,11 +62,18 @@ function endRound(io, ready, winnerIx) {
     correctWord: currentWord, players: ready
   });
   if (roundNo < MAX_ROUNDS && ready.length >= 2) {
-    setTimeout(() => startRound(io, ready), 5_000);
-  } else {
-    inGame = false;
-    io.in("readyRoom").emit("gameFinished", { players: ready });
-  }
+    setTimeout(() => startRound(io, ready, waiting), 5_000);
+    return;
+  } 
+  roundNo = 0;
+  currentArtistIx = -1;
+  ready.forEach(p => {
+    if (!waiting.includes(p.socketID)) waiting.push(p.socketID);
+  });
+  io.in("readyRoom").emit("gameFinished", { players: ready });
+  io.in('readyRoom').socketsLeave('readyRoom');
+  ready.length = 0;
+  io.emit('lobbyPlayers', waiting);
+  io.emit("finishGame",{gameState:false});
 }
-
 module.exports = { startRound, endRound, checkAnswer };

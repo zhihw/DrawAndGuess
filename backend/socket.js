@@ -13,7 +13,6 @@ let clients = []; //client
 let index = 0;
 let waiting = []; //socket.id
 let ready = []; //{state,socket.id}
-let inGame = false;
 function setupSocket(io) {
   io.on("connection", (socket) => {
     console.log("new client:", socket.id);
@@ -68,6 +67,12 @@ function setupSocket(io) {
     });
     //closure the client when user connected,  and because it is reference so clients will be edited
 
+    socket.on('requestInit', () => {
+      socket.emit('yourData',     client);
+      socket.emit('allPlayers',   clients);
+      socket.emit('lobbyPlayers', waiting);
+    });
+
     socket.on("start", () => {
       waiting = waiting.filter((c) => c !== socket.id);
       const c = {
@@ -75,10 +80,12 @@ function setupSocket(io) {
         socketID: socket.id,
         agree: false,
         role: "Guess",
+        score: 0,
       };
       ready.push(c);
       socket.join("readyRoom");
       io.emit("lobbyPlayers", waiting);
+      io.emit("readyPlayers", ready);
     });
 
     socket.on("sendReady", () => {
@@ -116,9 +123,8 @@ function setupSocket(io) {
       io.emit("readyPlayers", ready);
       //if left player allready ready
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
-        inGame = true;
-        io.emit("startGame", { timestamp: Date.now(), gameState: inGame });
-        startRound(io, ready);
+        io.emit("startGame", { timestamp: Date.now(), gameState: true });
+        startRound(io, ready, waiting);
       }
     });
 
@@ -128,9 +134,8 @@ function setupSocket(io) {
         player.agree = true;
       }
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
-        inGame = true;
-        io.emit("startGame", { timestamp: Date.now(), gameState: inGame });
-        startRound(io, ready);
+        io.emit("startGame", { timestamp: Date.now(), gameState: true });
+        startRound(io, ready, waiting);
       } else {
         io.in("readyRoom").emit("readyPlayers", ready);
       }
@@ -142,14 +147,14 @@ function setupSocket(io) {
         const playerIdx = ready.findIndex(p => p.socketID === socket.id);
         if (playerIdx === -1) return;
         if (checkAnswer(guessWord)) {
-          endRound(io, ready, playerIdx);
+          endRound(io, ready, waiting, playerIdx);
         }
         else socket.emit("wrongAnswer");
     });
 
-    socket.on("chat", ({ message }) => {
+    socket.on("chat", (msgpkg) => {
       player=ready.find((c) => c.socketID === socket.id);
-      io.in("readyRoom").emit("chat", { message, nickname:player.nickname });
+      io.in("readyRoom").emit("chat", msgpkg);
     });
 
     socket.on("draw", data => {
