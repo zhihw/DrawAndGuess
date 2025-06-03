@@ -11,7 +11,6 @@ function idGenerate(l) {
 
 let clients = []; //client
 let index = 0;
-let waiting = []; //socket.id
 let ready = []; //{state,socket.id}
 function setupSocket(io) {
   io.on("connection", (socket) => {
@@ -28,9 +27,7 @@ function setupSocket(io) {
     clients.push(client);
     //new client will be added into the clients array
 
-    waiting.push(socket.id);
     io.emit("allPlayers", clients);
-    io.emit("lobbyPlayers", waiting);
     socket.emit("yourData", client);
     //players who want to stay in lobby | not ready yet
 
@@ -62,7 +59,6 @@ function setupSocket(io) {
         [client.nickname, client.userID, oldID]
       );
       socket.emit("yourData", client);
-      io.emit("lobbyPlayers", waiting);
       io.emit("allPlayers", clients);
     });
     //closure the client when user connected,  and because it is reference so clients will be edited
@@ -70,13 +66,12 @@ function setupSocket(io) {
     socket.on('requestInit', () => {
       socket.emit('yourData',     client);
       socket.emit('allPlayers',   clients);
-      socket.emit('lobbyPlayers', waiting);
     });
 
     socket.on("start", () => {
-      waiting = waiting.filter((c) => c !== socket.id);
       const c = {
         nickname: client.nickname,
+        userID: client.userID,
         socketID: socket.id,
         agree: false,
         role: "Guess",
@@ -84,7 +79,6 @@ function setupSocket(io) {
       };
       ready.push(c);
       socket.join("readyRoom");
-      io.emit("lobbyPlayers", waiting);
       io.emit("readyPlayers", ready);
     });
 
@@ -117,14 +111,12 @@ function setupSocket(io) {
     // readyscreen events
     socket.on("readyReturn", () => {
       ready = ready.filter((c) => c.socketID !== socket.id);
-      waiting.push(socket.id);
       socket.leave("readyRoom");
-      io.emit("lobbyPlayers", waiting);
       io.emit("readyPlayers", ready);
       //if left player allready ready
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         io.emit("startGame", { timestamp: Date.now(), gameState: true });
-        startRound(io, ready, waiting);
+        startRound(io, ready);
       }
     });
 
@@ -135,7 +127,7 @@ function setupSocket(io) {
       }
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         io.emit("startGame", { timestamp: Date.now(), gameState: true });
-        startRound(io, ready, waiting);
+        startRound(io, ready);
       } else {
         io.in("readyRoom").emit("readyPlayers", ready);
       }
@@ -147,7 +139,7 @@ function setupSocket(io) {
         const playerIdx = ready.findIndex(p => p.socketID === socket.id);
         if (playerIdx === -1) return;
         if (checkAnswer(guessWord)) {
-          endRound(io, ready, waiting, playerIdx);
+          endRound(io, ready, playerIdx);
         }
         else socket.emit("wrongAnswer");
     });
@@ -176,9 +168,7 @@ function setupSocket(io) {
     socket.on("disconnect", () => {
       socket.removeAllListeners();
       clients = clients.filter((c) => c.socketID !== socket.id);
-      waiting = waiting.filter((id) => id !== socket.id);
       ready = ready.filter((c) => c.socketID !== socket.id);
-      io.emit("lobbyPlayers", waiting);
       io.emit("readyPlayers", ready);
       io.emit("allPlayers", clients);
       //remove current user

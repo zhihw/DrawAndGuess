@@ -1,3 +1,4 @@
+const pool = require('./db'); 
 const wordList = ["apple", "banana", "cherry"];
 
 function artistPicker(playerList) {
@@ -33,7 +34,7 @@ function checkAnswer(answer) {
   return false;
 }
 
-function startRound(io, ready, waiting) {
+function startRound(io, ready) {
   roundNo += 1;
   resetPlayers(ready);
   currentArtistIx = artistPicker(ready);
@@ -43,12 +44,11 @@ function startRound(io, ready, waiting) {
   io.in("readyRoom").emit("gameStarted", {
     roundNo, artistIx: currentArtistIx, word: currentWord, roundEndTs, players: ready
   });
-
   if(roundTimerId) clearTimeout(roundTimerId);
-  roundTimerId=setTimeout(() => endRound(io, ready, waiting, -1), 120_000);
+  roundTimerId=setTimeout(() => endRound(io, ready, -1), 120_000);
 }
 
-async function endRound(io, ready, waiting, winnerIx) {
+async function endRound(io, ready, winnerIx) {
   if (roundTimerId) {
     clearTimeout(roundTimerId);
     roundTimerId=null;
@@ -62,18 +62,31 @@ async function endRound(io, ready, waiting, winnerIx) {
     correctWord: currentWord, players: ready
   });
   if (roundNo < MAX_ROUNDS && ready.length >= 2) {
-    setTimeout(() => startRound(io, ready, waiting), 5_000);
+    setTimeout(() => startRound(io, ready), 5_000);
     return;
   } 
+
+  try {
+    const ids   = ready.map(p => p.userID);
+    if (ids.length) {
+      const cases = ready.map(() => 'WHEN ? THEN ?').join(' ');
+      const sql   = `
+        UPDATE clients
+        SET score = score + CASE userID ${cases} END
+        WHERE userID IN (${ids.map(() => '?').join(',')})
+      `;
+      const params = ready.flatMap(p => [p.userID, p.score]).concat(ids);
+      await pool.promise().query(sql, params);
+    }
+  } catch (err) {
+    console.error('fail', err);
+  }
+
   roundNo = 0;
   currentArtistIx = -1;
-  ready.forEach(p => {
-    if (!waiting.includes(p.socketID)) waiting.push(p.socketID);
-  });
   io.in("readyRoom").emit("gameFinished", { players: ready });
   io.in('readyRoom').socketsLeave('readyRoom');
   ready.length = 0;
-  io.emit('lobbyPlayers', waiting);
   io.emit("finishGame",{gameState:false});
 }
 module.exports = { startRound, endRound, checkAnswer };

@@ -5,7 +5,6 @@ import RankModal from '../components/RankModal';
 import './home.css';
 
 export default function HomeScreen(){
-    const [lobbyPlayers,setLobbyPlayers] = useState([]);
     const [allPlayers, setAllPlayers] = useState([]);
     const [playerInfo, setPlayerInfo] = useState({});
     const [showHistory, setShowHistory] = useState(false);
@@ -15,7 +14,6 @@ export default function HomeScreen(){
     const navigate = useNavigate();
 
     useEffect(()=>{
-        socket.on('lobbyPlayers', setLobbyPlayers);
         socket.on('allPlayers', setAllPlayers);
         socket.on('yourData', setPlayerInfo);
         socket.on('allPlayersData', data => setHistoryAll(data));
@@ -30,7 +28,6 @@ export default function HomeScreen(){
 
         //register listener when component mount 
         return()=>{
-            socket.off('lobbyPlayers', setLobbyPlayers);
             socket.off('allPlayers', setAllPlayers);
             socket.off('yourData', setPlayerInfo);
             socket.off('allPlayersData');
