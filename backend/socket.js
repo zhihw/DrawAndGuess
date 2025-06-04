@@ -1,4 +1,4 @@
-const {  startRound, endRound, checkAnswer  } = require("./game");
+const { startGame, startRound, endRound, checkAnswer } = require("./game");
 const db = require("./db");
 ////custom id generater num only with custom length
 function idGenerate(l) {
@@ -63,9 +63,9 @@ function setupSocket(io) {
     });
     //closure the client when user connected,  and because it is reference so clients will be edited
 
-    socket.on('requestInit', () => {
-      socket.emit('yourData',     client);
-      socket.emit('allPlayers',   clients);
+    socket.on("requestInit", () => {
+      socket.emit("yourData", client);
+      socket.emit("allPlayers", clients);
     });
 
     socket.on("start", () => {
@@ -127,7 +127,7 @@ function setupSocket(io) {
       }
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         io.emit("startGame", { timestamp: Date.now(), gameState: true });
-        startRound(io, ready);
+        startGame(io, ready);
       } else {
         io.in("readyRoom").emit("readyPlayers", ready);
       }
@@ -136,20 +136,19 @@ function setupSocket(io) {
     //game screen events
 
     socket.on("submitGuess", ({ guessWord }) => {
-        const playerIdx = ready.findIndex(p => p.socketID === socket.id);
-        if (playerIdx === -1) return;
-        if (checkAnswer(guessWord)) {
-          endRound(io, ready, playerIdx);
-        }
-        else socket.emit("wrongAnswer");
+      const playerIdx = ready.findIndex((p) => p.socketID === socket.id);
+      if (playerIdx === -1) return;
+      if (checkAnswer(guessWord)) {
+        endRound(io, ready, playerIdx);
+      } else socket.emit("wrongAnswer");
     });
 
     socket.on("chat", (msgpkg) => {
-      player=ready.find((c) => c.socketID === socket.id);
+      player = ready.find((c) => c.socketID === socket.id);
       io.in("readyRoom").emit("chat", msgpkg);
     });
 
-    socket.on("draw", data => {
+    socket.on("draw", (data) => {
       socket.to("readyRoom").emit("draw", data);
     });
 
