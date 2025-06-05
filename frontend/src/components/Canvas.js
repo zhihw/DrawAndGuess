@@ -1,19 +1,26 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import socket from "../socket";
 
 export default function Canvas({ isArtist }) {
   const canvasRef = useRef(null);
   const lastPoint = useRef(null);
   const isDrawing = useRef(false);
+  const [color, setColor] = useState("black");
+  const [lineWidth, setLineWidth] = useState(2);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, [isArtist]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
-    socket.on("clearCanvas", () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
     const handleMouseDown = (e) => {
       if (!isArtist) return;
       isDrawing.current = true;
@@ -23,6 +30,8 @@ export default function Canvas({ isArtist }) {
     const handleMouseMove = (e) => {
       if (!isArtist || !isDrawing.current) return;
       const { offsetX, offsetY } = e;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
       ctx.beginPath();
       ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
       ctx.lineTo(offsetX, offsetY);
@@ -33,8 +42,8 @@ export default function Canvas({ isArtist }) {
         fromY: lastPoint.current.y,
         toX: offsetX,
         toY: offsetY,
-        color: "black",
-        lineWidth: 2,
+        color: color,
+        lineWidth: lineWidth,
       });
       //then emit to other player
       lastPoint.current = { x: offsetX, y: offsetY };
@@ -47,6 +56,8 @@ export default function Canvas({ isArtist }) {
     };
 
     const handleGuessDraw = (d) => {
+      ctx.strokeStyle = d.color;
+      ctx.lineWidth = d.lineWidth;
       ctx.beginPath();
       ctx.moveTo(d.fromX, d.fromY);
       ctx.lineTo(d.toX, d.toY);
@@ -65,16 +76,42 @@ export default function Canvas({ isArtist }) {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
       socket.off("draw", handleGuessDraw);
-      socket.off("clearCanvas");
     };
-  }, [isArtist]);
+  }, [isArtist, color, lineWidth]);
 
+  const handleErase = () => {
+    setColor("white");
+    setLineWidth(30);
+  };
+  const handleBlackPen = () => {
+    setColor("black");
+    setLineWidth(2);
+  };
+  const handleRedPen = () => {
+    setColor("red");
+    setLineWidth(2);
+  };
+  const handleBluePen = () => {
+    setColor("blue");
+    setLineWidth(2);
+  };
+  const handleGreenPen = () => {
+    setColor("green");
+    setLineWidth(2);
+  };
   return (
-    <canvas
-      ref={canvasRef}
-      width={500}
-      height={350}
-      style={{ border: "1px solid black" }}
-    />
+    <div>
+      <canvas
+        ref={canvasRef}
+        width={500}
+        height={350}
+        style={{ border: "1px solid black" }}
+      />
+      <button onClick={handleErase}>erase</button>
+      <button onClick={handleBlackPen}>black pen</button>
+      <button onClick={handleRedPen}>red pen</button>
+      <button onClick={handleBluePen}>blue pen</button>
+      <button onClick={handleGreenPen}>green pen</button>
+    </div>
   );
 }

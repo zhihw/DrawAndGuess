@@ -3,6 +3,7 @@ import socket from "../socket";
 import { Navigate, useNavigate } from "react-router-dom";
 import Canvas from "../components/Canvas";
 import "./game.css";
+import RankModal from "../components/RankModal";
 
 const Message = React.memo(({ msgpkg }) => {
   const { msg, nickname } = msgpkg;
@@ -55,6 +56,8 @@ export default function GameScreen() {
   const [showRank, setShowRank] = useState(false);
   const [msgList, setMsgList] = useState([]);
   const [message, setMessage] = useState("");
+  const [showWinner, setShowWinner] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
 
   const navigate = useNavigate();
 
@@ -62,6 +65,7 @@ export default function GameScreen() {
     socket.on(
       "gameStarted",
       ({ roundNo, artistIx, word, roundEndTs, players }) => {
+        setShowWinner(false);
         setPlayers(players);
         setRoundNo(roundNo);
         setArtist(players[artistIx]);
@@ -75,6 +79,7 @@ export default function GameScreen() {
         setWinner(null);
         const diff = Math.max(0, Math.floor((roundEndTs - Date.now()) / 1000));
         setRemainingTime(diff);
+        setShowAnswer(false);
       }
     );
     socket.on(
@@ -91,6 +96,10 @@ export default function GameScreen() {
         setWord(correctWord);
         setWinner(players[winnerIx]);
         setRemainingTime(0);
+        if (winnerIx !== -1) {
+          setShowWinner(true);
+        }
+        setShowAnswer(true);
       }
     );
     socket.on("gameFinished", ({ players }) => {
@@ -117,7 +126,7 @@ export default function GameScreen() {
     if (!roundEndTs) return;
     const intervalId = setInterval(() => {
       const diff = roundEndTs - Date.now();
-      if (diff <= 0) {
+      if (diff <= 0 || winner) {
         setRemainingTime(0);
         clearInterval(intervalId);
       } else {
@@ -126,7 +135,7 @@ export default function GameScreen() {
     }, 1000);
     return () => clearInterval(intervalId);
     //clear interval when component unmount
-  }, [roundEndTs]);
+  }, [roundEndTs, winner]);
 
   const handleSendMsg = (msg) => {
     if (!msg.trim()) return;
@@ -139,6 +148,10 @@ export default function GameScreen() {
     if (!guessWord.trim()) return;
     socket.emit("submitGuess", { guessWord: guessWord.trim() });
     setGuessWord("");
+  };
+
+  const handleShowRank = () => {
+    setShowRank(true);
   };
 
   return (
@@ -173,6 +186,26 @@ export default function GameScreen() {
         </div>
       )}
       <Canvas isArtist={isArtist} />
+      <button onClick={handleShowRank}>Scoreboard</button>
+      {showWinner && (
+        <div className="roundInfcontainer">
+          <div className="winner-info">{winner?.nickname} wins!</div>
+        </div>
+      )}
+
+      {showAnswer && (
+        <div className="roundInfcontainer">
+          <div className="showAnswer">The answer was: {word}</div>
+        </div>
+      )}
+
+      {showRank && (
+        <RankModal
+          data={Players}
+          myData={Players.find((player) => player.socketID === socket.id)}
+          onClose={() => setShowRank(false)}
+        />
+      )}
     </div>
   );
 }
