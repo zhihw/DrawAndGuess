@@ -5,16 +5,27 @@ const { Server } = require("socket.io");
 const { setupSocket } = require("./socket");
 
 const app = express();
-app.use(cors());
+
+const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+app.use(
+  cors({
+    origin: ALLOWED_ORIGIN,
+    credentials: true,
+  })
+);
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: ALLOWED_ORIGIN,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 setupSocket(io);
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Listening ${PORT}`);
 });
