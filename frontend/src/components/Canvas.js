@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from "react";
 import socket from "../socket";
+import "./Canvas.css";
 
-export default function Canvas({ isArtist }) {
+export default function Canvas({ isArtist, roundNo }) {
   const canvasRef = useRef(null);
   const lastPoint = useRef(null);
   const isDrawing = useRef(false);
@@ -12,9 +13,10 @@ export default function Canvas({ isArtist }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, [isArtist]);
+  }, [roundNo]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,7 +79,7 @@ export default function Canvas({ isArtist }) {
       canvas.removeEventListener("mouseup", handleMouseUp);
       socket.off("draw", handleGuessDraw);
     };
-  }, [isArtist, color, lineWidth]);
+  }, [isArtist, color, lineWidth, roundNo]);
 
   const handleErase = () => {
     setColor("white");
@@ -100,18 +102,15 @@ export default function Canvas({ isArtist }) {
     setLineWidth(2);
   };
   return (
-    <div>
-      <canvas
-        ref={canvasRef}
-        width={500}
-        height={350}
-        style={{ border: "1px solid black" }}
-      />
-      <button onClick={handleErase}>erase</button>
-      <button onClick={handleBlackPen}>black pen</button>
-      <button onClick={handleRedPen}>red pen</button>
-      <button onClick={handleBluePen}>blue pen</button>
-      <button onClick={handleGreenPen}>green pen</button>
+    <div className="canvas-container">
+      <div className="tool-buttons">
+        <button onClick={handleErase}>erase</button>
+        <button onClick={handleBlackPen}>black</button>
+        <button onClick={handleRedPen}>red</button>
+        <button onClick={handleBluePen}>blue</button>
+        <button onClick={handleGreenPen}>green</button>
+      </div>
+      <canvas ref={canvasRef} width={800} height={500} />
     </div>
   );
 }

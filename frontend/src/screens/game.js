@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import socket from "../socket";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Canvas from "../components/Canvas";
 import "./game.css";
 import RankModal from "../components/RankModal";
@@ -58,6 +58,7 @@ export default function GameScreen() {
   const [message, setMessage] = useState("");
   const [showWinner, setShowWinner] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showFalse, setShowFalse] = useState(false);
 
   const navigate = useNavigate();
 
@@ -80,6 +81,7 @@ export default function GameScreen() {
         const diff = Math.max(0, Math.floor((roundEndTs - Date.now()) / 1000));
         setRemainingTime(diff);
         setShowAnswer(false);
+        setShowFalse(false);
       }
     );
     socket.on(
@@ -110,6 +112,9 @@ export default function GameScreen() {
     socket.on("chat", (msgpkg) => {
       setMsgList((prev) => [...prev, msgpkg]);
     });
+    socket.on("wrongAnswer", () => {
+      setShowFalse(true);
+    });
     socket.emit("ready");
 
     return () => {
@@ -119,6 +124,7 @@ export default function GameScreen() {
       socket.off("draw");
       socket.off("clearCanvas");
       socket.off("chat");
+      socket.off("wrongAnswer");
     };
   }, [navigate]);
 
@@ -137,6 +143,10 @@ export default function GameScreen() {
     //clear interval when component unmount
   }, [roundEndTs, winner]);
 
+  useEffect(() => {
+    setTimeout(() => setShowFalse(false), 3000);
+  }, [showFalse]);
+
   const handleSendMsg = (msg) => {
     if (!msg.trim()) return;
     const player = Players.find((player) => player.socketID === socket.id);
@@ -148,6 +158,7 @@ export default function GameScreen() {
     if (!guessWord.trim()) return;
     socket.emit("submitGuess", { guessWord: guessWord.trim() });
     setGuessWord("");
+    setShowFalse(false);
   };
 
   const handleShowRank = () => {
@@ -160,44 +171,63 @@ export default function GameScreen() {
         <div className="round-info">Round {roundNo} of 5</div>
         <div className="artist-info">Artist: {artist?.nickname}</div>
         <div className="time-info">Time left: {remainingTime}</div>
+        <button className="send-btn" onClick={handleShowRank}>
+          Scoreboard
+        </button>
       </div>
-      <ChatBox
-        msgList={msgList}
-        message={message}
-        setMessage={setMessage}
-        handleSendMsg={handleSendMsg}
-      />
-      {isArtist && <div className="word-info">Word: {word}</div>}
-      {!isArtist && (
-        <div className="guess-area">
-          <div className="guess-info">Word length: {word.length}</div>
-          <input
-            type="text"
-            placeholder="Type your guess here"
-            value={guessWord}
-            onChange={(e) => setGuessWord(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSubmitGuess();
-              }
-            }}
-          />
-          <button onClick={handleSubmitGuess}>Submit Guess</button>
-        </div>
-      )}
-      <Canvas isArtist={isArtist} />
-      <button onClick={handleShowRank}>Scoreboard</button>
-      {showWinner && (
-        <div className="roundInfcontainer">
-          <div className="winner-info">{winner?.nickname} wins!</div>
-        </div>
-      )}
 
-      {showAnswer && (
-        <div className="roundInfcontainer">
-          <div className="showAnswer">The answer was: {word}</div>
+      <div className="mid-container">
+        <Canvas isArtist={isArtist} roundNo={roundNo} key={roundNo} />
+        <div className="right-part">
+          <ChatBox
+            msgList={msgList}
+            message={message}
+            setMessage={setMessage}
+            handleSendMsg={handleSendMsg}
+          />
+          {isArtist && (
+            <div className="guess-area">
+              <div className="word-info">Word: {word}</div>
+            </div>
+          )}
+          {!isArtist && (
+            <div className="guess-area">
+              <div className="word-info">Word length: {word.length}</div>
+              <input
+                type="text"
+                placeholder="Type your guess here"
+                value={guessWord}
+                onChange={(e) => setGuessWord(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSubmitGuess();
+                  }
+                }}
+              />
+              <button
+                className="send-btn"
+                style={{ fontSize: "14px" }}
+                onClick={handleSubmitGuess}
+              >
+                Submit Guess
+              </button>
+            </div>
+          )}
+          <div className="guess-info">
+            <div className="word-info" style={{ alignSelf: "center" }}>
+              Feedback
+            </div>
+            {showFalse && <div className="word-info">Wrong Answer</div>}
+            {showWinner && (
+              <div className="word-info">{winner?.nickname} wins!</div>
+            )}
+
+            {showAnswer && (
+              <div className="word-info">The answer was: {word}</div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {showRank && (
         <RankModal

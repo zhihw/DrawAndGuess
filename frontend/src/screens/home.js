@@ -66,9 +66,8 @@ export default function HomeScreen(){
           </p>
           <ol className="rules-list">
             <li>10 rounds per game. Each round, one <strong>Artist</strong>, others are <strong>Guessers</strong>.</li>
-            <li>Artist has 60 s to sketch the secret word—no letters or numbers.</li>
-            <li>Guessers type guesses live; faster guesses = more points.</li>
-            <li>Artist earns points for every correct guesser.</li>
+            <li>Artist has 120 s to sketch the secret word—no letters or numbers.</li>
+            <li>The first guesser with the correct word wins the round(artist also wins the round).</li>
             <li>Leaderboard appears after the final round—top scorer gets the ⭐ crown!</li>
           </ol>
         </section>
