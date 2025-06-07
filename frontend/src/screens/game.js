@@ -59,6 +59,7 @@ export default function GameScreen() {
   const [showWinner, setShowWinner] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showFalse, setShowFalse] = useState(false);
+  const [showGuess, setShowGuess] = useState(false);
 
   const navigate = useNavigate();
 
@@ -82,6 +83,7 @@ export default function GameScreen() {
         setRemainingTime(diff);
         setShowAnswer(false);
         setShowFalse(false);
+        setShowGuess(true);
       }
     );
     socket.on(
@@ -102,6 +104,7 @@ export default function GameScreen() {
           setShowWinner(true);
         }
         setShowAnswer(true);
+        setShowGuess(false);
       }
     );
     socket.on("gameFinished", ({ players }) => {
@@ -190,7 +193,7 @@ export default function GameScreen() {
               <div className="word-info">Word: {word}</div>
             </div>
           )}
-          {!isArtist && (
+          {!isArtist && showGuess &&(
             <div className="guess-area">
               <div className="word-info">Word length: {word.length}</div>
               <input
