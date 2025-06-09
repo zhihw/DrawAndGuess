@@ -35,7 +35,7 @@ body,
   border-radius: 12px;
   padding: 24px 28px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
-  text-align: left; 
+  text-align: left;
 }
 
 .welcome-title {
@@ -52,7 +52,7 @@ body,
 }
 
 .rules-list {
-  list-style-position: inside; 
+  list-style-position: inside;
   margin: 0;
   padding-left: 0;
 }
@@ -166,7 +166,7 @@ body,
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(34, 197, 94, 0.45);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  margin: 20px 0; 
+  margin: 20px 0;
 }
 
 .start-button:hover {

@@ -12,6 +12,7 @@ function idGenerate(l) {
 let clients = []; //client
 let index = 0;
 let ready = []; //{state,socket.id}
+let inGame = false;
 function setupSocket(io) {
   io.on("connection", (socket) => {
     console.log("new client:", socket.id);
@@ -116,8 +117,13 @@ function setupSocket(io) {
       //if left player allready ready
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         io.emit("startGame", { timestamp: Date.now(), gameState: true });
+        inGame = true;
         startRound(io, ready);
       }
+    });
+
+    socket.on("checkGameState", () => {
+      socket.emit("gameState", { gameState: inGame });
     });
 
     socket.on("ready", () => {
@@ -127,6 +133,7 @@ function setupSocket(io) {
       }
       if (ready.length >= 2 && ready.every((player) => player.agree === true)) {
         io.emit("startGame", { timestamp: Date.now(), gameState: true });
+        inGame = true;
         startGame(io, ready);
       } else {
         io.in("readyRoom").emit("readyPlayers", ready);
