@@ -71,7 +71,7 @@ export default function HomeScreen() {
         </p>
         <ol className="rules-list">
           <li>
-            10 rounds per game. Each round, one <strong>Artist</strong>, others
+            5 rounds per game. Each round, one <strong>Artist</strong>, others
             are <strong>Guessers</strong>.
           </li>
           <li>
@@ -79,11 +79,7 @@ export default function HomeScreen() {
           </li>
           <li>
             The first guesser with the correct word wins the round(artist also
-            wins the round).
-          </li>
-          <li>
-            Leaderboard appears after the final round—top scorer gets the ⭐
-            crown!
+            gets point).
           </li>
         </ol>
       </section>
