@@ -157,7 +157,7 @@ export default function GameScreen() {
     if (!msg.trim()) return;
     const lowerMsg = msg.toLowerCase();
     const lowerWord = word.toLowerCase();
-    if (lowerMsg.includes(lowerWord)) {
+    if (lowerMsg.includes(lowerWord)&& isArtist) {
       setAlertMsg(true);
       setTimeout(() => setAlertMsg(false), 3000);
       return;
