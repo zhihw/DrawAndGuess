@@ -60,6 +60,7 @@ export default function GameScreen() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showFalse, setShowFalse] = useState(false);
   const [showGuess, setShowGuess] = useState(false);
+  const [AlertMsg, setAlertMsg] = useState(false);
 
   const navigate = useNavigate();
 
@@ -84,6 +85,7 @@ export default function GameScreen() {
         setShowAnswer(false);
         setShowFalse(false);
         setShowGuess(true);
+        setAlertMsg(false);
       }
     );
     socket.on(
@@ -105,6 +107,7 @@ export default function GameScreen() {
         }
         setShowAnswer(true);
         setShowGuess(false);
+        setAlertMsg(false);
       }
     );
     socket.on("gameFinished", ({ players }) => {
@@ -152,6 +155,13 @@ export default function GameScreen() {
 
   const handleSendMsg = (msg) => {
     if (!msg.trim()) return;
+    const lowerMsg = msg.toLowerCase();
+    const lowerWord = word.toLowerCase();
+    if (lowerMsg.includes(lowerWord)) {
+      setAlertMsg(true);
+      setTimeout(() => setAlertMsg(false), 3000);
+      return;
+    };
     const player = Players.find((player) => player.socketID === socket.id);
     const msgpkg = { msg: msg, nickname: player.nickname };
     socket.emit("chat", msgpkg);
@@ -227,6 +237,10 @@ export default function GameScreen() {
 
             {showAnswer && (
               <div className="word-info">The answer was: {word}</div>
+            )}
+
+            {AlertMsg && (
+              <div className="word-info">No cheating!!!</div>
             )}
           </div>
         </div>
