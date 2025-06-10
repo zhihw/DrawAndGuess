@@ -172,6 +172,10 @@ function setupSocket(io) {
       io.in("readyRoom").emit("playerScore", playerScores);
     });
 
+    socket.on("ping", (sentAt) => {
+      socket.emit("pong", sentAt);
+    });
+
     socket.on("disconnect", () => {
       socket.removeAllListeners();
       clients = clients.filter((c) => c.socketID !== socket.id);
