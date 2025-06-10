@@ -175,6 +175,10 @@ function setupSocket(io) {
       socket.removeAllListeners();
       clients = clients.filter((c) => c.socketID !== socket.id);
       ready = ready.filter((c) => c.socketID !== socket.id);
+      if (ready.length < 2) {
+        endRound(io, ready, -1);
+        inGame = false;
+      }
       io.emit("readyPlayers", ready);
       io.emit("allPlayers", clients);
       //remove current user
