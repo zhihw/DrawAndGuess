@@ -1,4 +1,5 @@
 const pool = require("./db");
+const { setInGame, getInGame } = require("./socket");
 const wordList = [
   "apple",
   "banana",
@@ -160,5 +161,7 @@ async function endRound(io, ready, winnerIx) {
   io.in("readyRoom").socketsLeave("readyRoom");
   ready.length = 0;
   io.emit("finishGame", { gameState: false });
+  setInGame(false);
+  return;
 }
 module.exports = { startGame, startRound, endRound, checkAnswer };

@@ -13,6 +13,14 @@ let clients = []; //client
 let index = 0;
 let ready = []; //{state,socket.id}
 let inGame = false;
+
+function setInGame(value) {
+  inGame = value;
+}
+
+function getInGame() {
+  return inGame;
+}
 function setupSocket(io) {
   io.on("connection", (socket) => {
     console.log("new client:", socket.id);
@@ -199,4 +207,4 @@ function setupSocket(io) {
   });
 }
 
-module.exports = { setupSocket };
+module.exports = { setupSocket, getInGame, setInGame };
