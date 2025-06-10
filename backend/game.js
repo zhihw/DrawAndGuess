@@ -1,5 +1,5 @@
 const pool = require("./db");
-const { setInGame, getInGame } = require("./socket");
+const { setInGame, getInGame } = require("./gameState");
 const wordList = [
   "apple",
   "banana",
